@@ -7,10 +7,13 @@
 namespace XrTools;
 
 /**
- * :TODO: Localization utilities (time, language, geo)
+ * :TODO:REFACTOR: Localization utilities (time, language, geo)
  */
-class Locale
-{
+class Locale {
 
+	// :WIP: stub for message 
+	public function mes($key){
+		return $key;
+	}
 	
 }
