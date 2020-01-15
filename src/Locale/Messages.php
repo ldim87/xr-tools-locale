@@ -1,0 +1,183 @@
+<?php
+/**
+ * @author Dmitriy Lukin <lukin.d87@gmail.com>
+ */
+
+namespace XrTools\Locale;
+
+/**
+ * Localized Strings (messages)
+ */
+class Messages
+{
+	
+	protected $mes = [];
+	
+	protected $langs = [];
+
+	protected $default_lang = 'en';
+	
+	protected $lang;
+	
+	protected $default_mes_folder = '';
+
+	/**
+	 * Runtime cache for loaded messages
+	 * @var array
+	 */
+	protected $keys_loaded = [];
+	
+	protected $debug = false;
+
+	protected $debug_messages = [];
+
+	function __construct($sys = []){
+
+		// default language
+		if(!empty($sys['default_lang'])){
+			$this->default_lang = (string) $sys['default_lang'];
+		}
+
+		// allowed languages
+		$this->langs = !empty($sys['lang_enabled']) ? json_decode($sys['lang_enabled']) : [ $this->default_lang ];
+
+		if(isset($sys['debug'])){
+			$this->debug = !empty($sys['debug']);
+		}
+
+		// Папка для чтения сообщений
+		if(!empty($sys['default_mes_folder'])){
+			$this->default_mes_folder = (string) $sys['default_mes_folder'];
+		}
+
+		// Настройка языка
+		$this->set_lang($sys['lang'] ?? $this->default_lang);
+
+		// Наполнение массива сообщений по умолчанию
+		if(!empty($sys['type'])){
+			$this->load((string) $sys['type']);
+		}
+	}
+
+	protected function debug($mes, $method){
+		$this->debug_messages[] = $method . ': ' . $mes;
+	}
+
+	public function debug_flush(){
+		$this->debug_messages = [];
+	}
+
+	protected function check_type($type){
+		if(!$type){
+			throw new \Exception('Type is not set');
+		}
+	}
+
+	// :TODO:REFACTOR: Удалена ф-ция check_lang(). Убрать в остальных местах
+
+	public function load(string $type, $sys = []){
+
+		$debug = !empty($sys['debug']) || $this->debug;
+		
+		$this->check_type($type);
+		
+		// генерим путь
+		$path = $this->default_mes_folder . $type;
+
+		// грузим из файла
+		try {
+			$this->load_from_dir($path, array('debug'=>$debug));
+		} catch (\Exception $e) {
+			$this->debug($e, __METHOD__);
+		}
+	}
+	
+	// ф-ция подгружает дополнительный языковой файл и накладывает на имеющееся
+	public function load_another($type){
+		
+		if(in_array($type, $this->keys_loaded)){
+			return true;
+		}
+
+		// временно сохраняем имеющееся
+		$existing_messages = $this->mes;
+		
+		// подгружаем новый тип
+		if(!$this->load($type)){
+			return false;
+		}
+		
+		// смешиваем поля (новый переписывает старый)
+		$this->mes = array_merge($existing_messages, $this->mes);
+
+		// запоминаем ключ
+		$this->keys_loaded[] = $type;
+
+		return true;
+	}
+
+	// загрузка сообщений из файла
+	public function load_from_dir(string $path, $sys = []){
+		// неверный путь
+		if(!$path){
+			throw new \Exception('Path is not set');
+		}
+		
+		// собираем полный путь
+		$path_file = $path . '/' . $this->lang.'.ini';
+		
+		if(!is_file($path_file)){
+			throw new \Exception('File does not exist: '.$path_file);
+		}
+		
+		// грузим сообщения
+		$messages = parse_ini_file($path_file);
+		
+		// если не загрузилось
+		if($messages === false){
+			throw new \Exception('Parsing ini file failed: '.$path_file);
+		}
+		
+		$this->mes = $messages;
+	}
+	
+	// настройка языка
+	public function set_lang(string $lang){
+		// допустимые языки
+		if(!in_array($lang, $this->langs)){
+			throw new Exception('Language is not supported!');
+		}
+		
+		// настраиваем язык
+		$this->lang = $lang;
+	}
+
+	// загрузка сообщения
+	public function get(string $index){
+		// если сообщение не задано или не настроено
+		if(!isset($this->mes[$index])){
+			return $index;
+		}
+		
+		// грузим сообщение
+		$message = $this->mes[$index];
+		
+		// если включен парсинг (replacements)
+		$args = func_get_args();
+		
+		if(isset($args[1])){
+			// удаляем первый аргумент
+			array_shift($args);
+			
+			// накапливаем массив для замены текстов
+			$patterns = array_fill(0, count($args), '/\[([^\]]*)\]/');
+			
+			// производим замену
+			$message = preg_replace($patterns, $args, $message, 1);
+		}
+		
+		return $message;
+	}
+
+
+}

@@ -11,9 +11,18 @@ namespace XrTools;
  */
 class Locale {
 
-	// :WIP: stub for message 
-	public function mes($key){
-		return $key;
+	private $config;
+
+	function __construct(\XrTools\Config $config){
+		$this->config = $config;
 	}
+
+	// messaging service
+	private $mes; function mes(){
+		return $this->mes ?: $this->mes = new \XrTools\Locale\Messages(
+			$this->config->get('mes') ?? []
+		);
+	}
+
 	
 }
