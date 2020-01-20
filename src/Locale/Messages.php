@@ -84,11 +84,19 @@ class Messages
 		// генерим путь
 		$path = $this->default_mes_folder . $type;
 
-		// грузим из файла
 		try {
+			// грузим из файла
 			$this->load_from_dir($path, array('debug'=>$debug));
+
+			// возвращаем подтверждение
+			return true;
+
 		} catch (\Exception $e) {
+			// пишем в дебаг
 			$this->debug($e, __METHOD__);
+
+			// возвращаем отказ
+			return false;
 		}
 	}
 	
@@ -144,12 +152,20 @@ class Messages
 	// настройка языка
 	public function set_lang(string $lang){
 		// допустимые языки
-		if(!in_array($lang, $this->langs)){
-			throw new Exception('Language is not supported!');
+		if(!$this->is_allowed_lang($lang)){
+			throw new \Exception('Language is not supported!');
 		}
 		
 		// настраиваем язык
 		$this->lang = $lang;
+	}
+
+	public function is_allowed_lang(string $lang){
+		return in_array($lang, $this->langs);
+	}
+
+	public function get_lang(){
+		return $this->lang;
 	}
 
 	// загрузка сообщения
