@@ -73,8 +73,6 @@ class Messages
 		}
 	}
 
-	// :TODO:REFACTOR: Удалена ф-ция check_lang(). Убрать в остальных местах
-
 	public function load(string $type, $sys = []){
 
 		$debug = !empty($sys['debug']) || $this->debug;

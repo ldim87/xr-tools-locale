@@ -7,7 +7,7 @@
 namespace XrTools;
 
 /**
- * :TODO:REFACTOR: Localization utilities (time, language, geo)
+ * Localization utilities (time, language, geo)
  */
 class Locale {
 
