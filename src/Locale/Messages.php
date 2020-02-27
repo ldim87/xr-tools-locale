@@ -39,7 +39,12 @@ class Messages
 		}
 
 		// allowed languages
-		$this->langs = !empty($sys['lang_enabled']) ? json_decode($sys['lang_enabled']) : [ $this->default_lang ];
+		if(!empty($sys['lang_enabled'])){
+			$this->langs =  array_map(function($lang){return trim($lang);}, explode(',', $sys['lang_enabled']));
+		}else{
+			$this->langs = [ $this->default_lang ];
+		}
+		
 
 		if(isset($sys['debug'])){
 			$this->debug = !empty($sys['debug']);
