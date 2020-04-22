@@ -17,11 +17,28 @@ class Locale {
 		$this->config = $config;
 	}
 
+	// messaging service array (lang => object)
+	private $mes = [];
+
 	// messaging service
-	private $mes; function mes(){
-		return $this->mes ?: $this->mes = new \XrTools\Locale\Messages(
-			$this->config->get('mes') ?? []
-		);
+	function mes(string $lang = null){
+
+		$config = $this->config->get('mes') ?? [];
+
+		if(!isset($lang)){
+			$lang = $config['lang'] ?? $config['default_lang'] ?? 'en';
+		}
+		else {
+			$config['lang'] = $lang;
+		}
+
+		if(isset($this->mes[$lang])){
+			return $this->mes[$lang];
+		}
+		
+		$this->mes[$lang] = new \XrTools\Locale\Messages($config);
+
+		return $this->mes[$lang];
 	}
 
 	// geoIp service
