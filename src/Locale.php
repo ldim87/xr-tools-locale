@@ -25,7 +25,7 @@ class Locale {
 
 		$config = $this->config->get('mes') ?? [];
 
-		if(!isset($lang)){
+		if(empty($lang)){
 			$lang = $config['lang'] ?? $config['default_lang'] ?? 'en';
 		}
 		else {
@@ -98,5 +98,18 @@ class Locale {
 
 		// or default via browser
 		return $user_tz ?: date_default_timezone_get();
+	}
+
+	function getTimezoneOffsetHoursFormat(int $seconds_offset){
+
+		$hours_float = $seconds_offset / 3600;
+
+		$hours = (int) $hours_float;
+
+		$minutes = abs(($hours_float - $hours) * 60);
+
+		$result = sprintf("%+03d:%02d", $hours, $minutes);
+
+		return $result;
 	}
 }

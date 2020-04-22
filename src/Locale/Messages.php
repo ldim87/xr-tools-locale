@@ -163,6 +163,10 @@ class Messages
 		return in_array($lang, $this->langs);
 	}
 
+	public function get_default_lang(){
+		return $this->default_lang;
+	}
+
 	public function get_lang(){
 		return $this->lang;
 	}
