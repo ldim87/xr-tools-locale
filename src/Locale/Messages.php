@@ -79,6 +79,10 @@ class Messages
 		$debug = !empty($sys['debug']) || $this->debug;
 		
 		$this->check_type($type);
+
+		if(in_array($type, $this->keys_loaded)){
+			return true;
+		}
 		
 		// генерим путь
 		$path = $this->default_mes_folder . $type;
@@ -86,6 +90,9 @@ class Messages
 		try {
 			// грузим из файла
 			$this->load_from_dir($path, array('debug'=>$debug));
+
+			// запоминаем ключ
+			$this->keys_loaded[] = $type;
 
 			// возвращаем подтверждение
 			return true;
@@ -116,9 +123,6 @@ class Messages
 		
 		// смешиваем поля (новый переписывает старый)
 		$this->mes = array_merge($existing_messages, $this->mes);
-
-		// запоминаем ключ
-		$this->keys_loaded[] = $type;
 
 		return true;
 	}
