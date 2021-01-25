@@ -202,5 +202,12 @@ class Messages
 		return $message;
 	}
 
-
+	/**
+	 * Returns all messages
+	 * @return array All messages
+	 */
+	public function getAllMes(): array
+	{
+		return $this->mes;
+	}
 }
