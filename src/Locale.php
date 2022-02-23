@@ -56,22 +56,22 @@ class Locale {
 	 */
 	function getTimezoneOffset($remote_tz, $origin_tz = null) {
 
-	    if($origin_tz === null) {
-	        if(!is_string($origin_tz = date_default_timezone_get())) {
-	        	// A UTC timestamp was returned -- bail out!
-	            return 0;
-	        }
-	    }
+		if($origin_tz === null) {
+			if(!is_string($origin_tz = date_default_timezone_get())) {
+				// A UTC timestamp was returned -- bail out!
+				return 0;
+			}
+		}
 
-	    $origin_dtz = new \DateTimeZone($origin_tz);
-	    $remote_dtz = new \DateTimeZone($remote_tz);
-	    
-	    $origin_dt = new \DateTime("now", $origin_dtz);
-	    $remote_dt = new \DateTime("now", $remote_dtz);
-	    
-	    $offset = $origin_dtz->getOffset($origin_dt) - $remote_dtz->getOffset($remote_dt);
-	    
-	    return $offset;
+		$origin_dtz = new \DateTimeZone($origin_tz);
+		$remote_dtz = new \DateTimeZone($remote_tz);
+		
+		$origin_dt = new \DateTime("now", $origin_dtz);
+		$remote_dt = new \DateTime("now", $remote_dtz);
+		
+		$offset = $origin_dtz->getOffset($origin_dt) - $remote_dtz->getOffset($remote_dt);
+		
+		return $offset;
 	}
 
 
@@ -92,12 +92,11 @@ class Locale {
 	 * @param  string $region_code  [description]
 	 * @return [type]               [description]
 	 */
-	function getTimezone(string $country_code, string $region_code){
-		// get via geoip service
-		$user_tz = $this->geoip()->geoTimezone($country_code, $region_code);
-
-		// or default via browser
-		return $user_tz ?: date_default_timezone_get();
+	function getTimezone(string $timezone = null){
+		
+		return $timezone && in_array($timezone, \DateTimeZone::listIdentifiers()) ? 
+			$timezone : 
+			date_default_timezone_get();
 	}
 
 	function getTimezoneOffsetHoursFormat(int $seconds_offset){

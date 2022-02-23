@@ -5,35 +5,71 @@
 
 namespace XrTools\Locale;
 
+use \GeoIp2\Database\Reader;
+use \GeoIp2\Exception\AddressNotFoundException;
+use \MaxMind\Db\InvalidDatabaseException;
+
 /**
  * 
  */
 class GeoIP {
 	
-	// extend geoip.custom_directory
-	private $geoip_custom_dirs = [];
+	// Default: $_SERVER['REMOTE_ADDR']
+	protected $default_ip_address;
 
-	// try before _SERVER['REMOTE_ADDR']
-	private $default_ip_address;
+	protected $readers = [];
+
+	protected $readers_paths = [];
+
+	protected $ip_info_precision = 'city';
+
+	protected $ip_info_cache = [];
 	
 	function __construct(array $opt = []){
-		// additional geoip dirs to scan
-		if(isset($opt['geoip_custom_dirs'])){
-			$this->setCustomDirs($opt['geoip_custom_dirs']);
+		
+		// paths to mmdb files, e.g. ['city' => '/path/to/file.mmdb']
+		if(isset($opt['readers_paths']) && is_array($opt['readers_paths'])){
+			$this->readers_paths = $opt['readers_paths'];
+		}
+
+		// city / country
+		if(isset($opt['ip_info_precision']) && isset($this->readers_paths[$opt['ip_info_precision']])){
+			$this->ip_info_precision = $opt['ip_info_precision'];
 		}
 
 		// set default ip
-		if(isset($opt['default_ip_address'])){
-			$this->default_ip_address = $opt['default_ip_address'];
+		$this->default_ip_address = $opt['default_ip_address'] ?? $_SERVER['REMOTE_ADDR'];
+	}
+
+	protected function isValidResult($record){
+
+		$precision_city_ok = $this->ip_info_precision != 'city' || ( isset($record->city) && isset($record->mostSpecificSubdivision) );
+
+		return isset($record->location) && isset($record->country) && $precision_city_ok;
+	}
+
+	protected function getReader(string $type){
+		
+		$type = $type ?? $this->default_reader;
+
+		if(!isset($this->readers[$type])){
+
+			if(!isset($this->readers_paths[$type])){
+				throw new \Exception("Path to current reader ({$type}) is not set!");
+			}
+
+			$this->readers[$type] = new Reader($this->readers_paths[$type]);
 		}
+
+		return $this->readers[$type];
 	}
 
-	private function isValidResult($result){
-		return is_array($result) && isset($result['country_code']) && $result['country_code'] != '--';
+	protected function getCachedResult($ip){
+		return $this->ip_info_cache[$this->ip_info_precision][$ip] ?? null;
 	}
 
-	function setCustomDirs(array $dirs){
-		$this->geoip_custom_dirs = $dirs;
+	protected function setCachedResult($ip, array $result){
+		$this->ip_info_cache[$this->ip_info_precision][$ip] = $result;
 	}
 
 	function validateIp(string $ip){
@@ -42,47 +78,56 @@ class GeoIP {
 
 	function getIpInfo(string $ip = null){
 
-		$ip = $ip ?? $this->default_ip_address ?? $_SERVER['REMOTE_ADDR'];
+		$ip = $ip ?? $this->default_ip_address;
 
 		if(!$this->validateIp($ip)){
-			return ['status' => false, 'error' => 1];
+			return ['status' => false, 'error' => 'Invalid IP address!'];
 		}
 
-		// default search
-		$geo_info = geoip_record_by_name($ip);
-
-		if($this->isValidResult($geo_info)){
-			$geo_info['found_in'] = 'geoip.custom_directory';
-			$geo_info['status'] = true;
-
-			return $geo_info;
+		// return cached result if exists
+		if ($result = $this->getCachedResult($ip)){
+			return $result;
 		}
-		
-		// if not found, let's search custom directories
-		foreach ($this->geoip_custom_dirs as $custom_dir) {
-			// switch directory
-			geoip_setup_custom_directory($custom_dir);
 
-			// search
-			$geo_info = geoip_record_by_name($ip);
+		$result = ['status' => false, 'error' => ''];
 
-			// check
-			if($this->isValidResult($geo_info)){
+		try {
 
-				$geo_info['found_in'] = $custom_dir;
-				$geo_info['status'] = true;
+			// default search
+			$record = $this->ip_info_precision == 'city' ? $this->getReader('city')->city($ip) : $this->getReader('country')->country($ip);
 
-				return $geo_info;
+			if($this->isValidResult($record)){
+				
+				$result['status'] = true;
+
+				$result['record'] = $record;
+
+				// helper keys
+				$result['country_code'] = $record->country->isoCode;
+				$result['region'] = $record->mostSpecificSubdivision->isoCode;
+				$result['timezone'] = $record->location->timeZone;
+
+				if($this->ip_info_precision == 'city'){
+					$result['city'] = $record->city->name;
+				}
+			}
+			else {
+				$result = ['status' => false, 'error' => 'Invalid result!'];
 			}
 		}
+		catch (InvalidDatabaseException $e) {
+			$result = ['status' => false, 'error' => 'Invalid database error! ' . $e->getMessage()];
+		}
+		catch (AddressNotFoundException $e) {
+			$result = ['status' => false, 'error' => 'Address not found! ' . $e->getMessage()];
+		}
+		catch (\Exception $e) {
+			$result = ['status' => false, 'error' => $e->getMessage()];
+		}
 
-		// nothing found
-		return ['status' => false, 'error' => 2];
-	}
+		// cache result
+		$this->setCachedResult($ip, $result);
 
-	function geoTimezone(string $country_code, string $region_code){
-		return geoip_time_zone_by_country_and_region(
-			$country_code, $region_code
-		);
+		return $result;
 	}
 }
