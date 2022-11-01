@@ -193,10 +193,10 @@ class Messages
 			array_shift($args);
 			
 			// накапливаем массив для замены текстов
-			$patterns = array_fill(0, count($args), '/\[([^\]]*)\]/');
-			
+			$patterns = array_fill(0, count($args), '/\[([^\[\]]*)\]/');
+
 			// производим замену
-			$message = preg_replace($patterns, $args, $message, 1);
+			$message = preg_replace($patterns, $args, $message, 3);
 		}
 		
 		return $message;
