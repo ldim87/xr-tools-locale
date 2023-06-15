@@ -175,6 +175,15 @@ class Messages
 		return $this->lang;
 	}
 
+	/**
+	 * @param string $index
+	 * @return bool
+	 */
+	public function issetMes(string $index): bool
+	{
+		return isset($this->mes[$index]);
+	}
+
 	// загрузка сообщения
 	public function get(string $index){
 		// если сообщение не задано или не настроено
@@ -196,7 +205,7 @@ class Messages
 			$patterns = array_fill(0, count($args), '/\[([^\[\]]*)\]/');
 
 			// производим замену
-			$message = preg_replace($patterns, $args, $message, 3);
+			$message = preg_replace($patterns, $args, $message, 1);
 		}
 		
 		return $message;
