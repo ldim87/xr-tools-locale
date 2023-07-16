@@ -107,7 +107,7 @@ class Messages
 	}
 	
 	// ф-ция подгружает дополнительный языковой файл и накладывает на имеющееся
-	public function load_another($type){
+	public function load_another($type, bool $override = false){
 		
 		if(in_array($type, $this->keys_loaded)){
 			return true;
@@ -122,7 +122,13 @@ class Messages
 		}
 		
 		// смешиваем поля (новый переписывает старый)
-		$this->mes = array_merge($existing_messages, $this->mes);
+		if($override){
+			$this->mes = array_merge($existing_messages, $this->mes);
+		}
+		// смешиваем поля (добавляем только новые, старые оставляем как есть)
+		else {
+			$this->mes = array_merge($this->mes, $existing_messages);
+		}
 
 		return true;
 	}
