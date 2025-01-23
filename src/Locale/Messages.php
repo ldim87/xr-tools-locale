@@ -20,6 +20,10 @@ class Messages
 	protected $lang;
 	
 	protected $default_mes_folder = '';
+	
+	protected $default_mes_json_folder = '';
+
+	protected array $mesJsonCache = [];
 
 	/**
 	 * Runtime cache for loaded messages
@@ -49,6 +53,11 @@ class Messages
 		// Папка для чтения сообщений
 		if(!empty($sys['default_mes_folder'])){
 			$this->default_mes_folder = (string) $sys['default_mes_folder'];
+		}
+
+		// Папка для чтения структуированных сообщений
+		if(!empty($sys['default_mes_json_folder'])){
+			$this->default_mes_json_folder = (string) $sys['default_mes_json_folder'];
 		}
 
 		// Настройка языка
@@ -224,5 +233,36 @@ class Messages
 	public function getAllMes(): array
 	{
 		return $this->mes;
+	}
+
+	
+
+	/**
+	 * @param string $name
+	 * @return mixed
+	 */
+	function fromJson(string $name): ?array
+	{
+		if (isset($this->mesJsonCache[$name])) {
+			return $this->mesJsonCache[$name];
+		}
+
+		$lang = $this->get_lang();
+		
+		$file = $this->default_mes_json_folder . $name . '/' . $lang . '.json';
+
+		if (! is_file($file)){
+			return null;
+		}
+
+		$content = json_decode(file_get_contents($file), true);
+
+		if(!is_array($content)){
+			return null;
+		}
+
+		$this->mesJsonCache[$name] = $content;
+
+		return $content;
 	}
 }
