@@ -21,7 +21,7 @@ class Locale {
 	private $mes = [];
 
 	// messaging service
-	function mes(string $lang = null){
+	function mes(?string $lang = null){
 
 		$config = $this->config->get('mes') ?? [];
 
@@ -92,7 +92,7 @@ class Locale {
 	 * @param  string $region_code  [description]
 	 * @return [type]               [description]
 	 */
-	function getTimezone(string $timezone = null){
+	function getTimezone(?string $timezone = null){
 		
 		return $timezone && in_array($timezone, \DateTimeZone::listIdentifiers()) ? 
 			$timezone : 

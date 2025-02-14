@@ -24,6 +24,8 @@ class GeoIP {
 	protected $ip_info_precision = 'city';
 
 	protected $ip_info_cache = [];
+
+	protected $default_reader = 'city';
 	
 	function __construct(array $opt = []){
 		
@@ -76,7 +78,7 @@ class GeoIP {
 		return filter_var($ip, FILTER_VALIDATE_IP);
 	}
 
-	function getIpInfo(string $ip = null){
+	function getIpInfo(?string $ip = null){
 
 		$ip = $ip ?? $this->default_ip_address;
 
