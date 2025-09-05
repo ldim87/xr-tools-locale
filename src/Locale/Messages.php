@@ -83,13 +83,31 @@ class Messages
 		}
 	}
 
-	public function load(string $type, $sys = []){
+    /**
+     * @param string $type
+     * @return bool
+     */
+    function is_loaded_type(string $type): bool
+    {
+        return isset($this->keys_loaded[$type]);
+    }
+
+    /**
+     * @param string $type
+     * @return array
+     */
+    function get_type_keys(string $type): array
+    {
+        return $this->keys_loaded[$type] ?? [];
+    }
+
+	function load(string $type, $sys = []){
 
 		$debug = !empty($sys['debug']) || $this->debug;
 		
 		$this->check_type($type);
 
-		if(in_array($type, $this->keys_loaded)){
+		if ($this->is_loaded_type($type)) {
 			return true;
 		}
 		
@@ -98,10 +116,14 @@ class Messages
 
 		try {
 			// грузим из файла
-			$this->load_from_dir($path, array('debug'=>$debug));
+			$messages = $this->load_from_dir($path, [
+                'debug' => $debug
+            ]);
 
-			// запоминаем ключ
-			$this->keys_loaded[] = $type;
+            $this->mes = $messages;
+
+                // запоминаем ключ
+			$this->keys_loaded[$type] = array_keys($this->mes);
 
 			// возвращаем подтверждение
 			return true;
@@ -116,17 +138,17 @@ class Messages
 	}
 	
 	// ф-ция подгружает дополнительный языковой файл и накладывает на имеющееся
-	public function load_another($type, bool $override = false){
-		
-		if(in_array($type, $this->keys_loaded)){
-			return true;
-		}
+	function load_another(string $type, bool $override = false)
+    {
+        if ($this->is_loaded_type($type)) {
+            return true;
+        }
 
 		// временно сохраняем имеющееся
 		$existing_messages = $this->mes;
 		
 		// подгружаем новый тип
-		if(!$this->load($type)){
+		if (! $this->load($type)) {
 			return false;
 		}
 		
@@ -164,7 +186,7 @@ class Messages
 			throw new \Exception('Parsing ini file failed: '.$path_file);
 		}
 		
-		$this->mes = $messages;
+		return $messages;
 	}
 	
 	// настройка языка
