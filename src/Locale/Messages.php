@@ -116,7 +116,7 @@ class Messages
 
 		try {
 			// грузим из файла
-			$messages = $this->load_from_dir($path, [
+			$messages = $this->get_from_dir($path, [
                 'debug' => $debug
             ]);
 
@@ -165,7 +165,7 @@ class Messages
 	}
 
 	// загрузка сообщений из файла
-	public function load_from_dir(string $path, $sys = []){
+	function get_from_dir(string $path, $sys = []){
 		// неверный путь
 		if(!$path){
 			throw new \Exception('Path is not set');
@@ -188,7 +188,7 @@ class Messages
 		
 		return $messages;
 	}
-	
+
 	// настройка языка
 	public function set_lang(string $lang){
 		// допустимые языки
